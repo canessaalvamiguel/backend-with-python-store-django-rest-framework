@@ -1,14 +1,19 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from .models import CartItem
 from .serializer import CartItemSerializer
 
 
-class ShoppingCartAPIView(APIView):
+class ShoppingCartAPIView(GenericAPIView):
     serializer_class = CartItemSerializer
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        return CartItem.objects.all()
 
     def post(self, request):
         serializer = CartItemSerializer(data=request.data)
@@ -26,7 +31,7 @@ class ShoppingCartAPIView(APIView):
 
         items = CartItem.objects.all()
         serializer = CartItemSerializer(items, many=True)
-        return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+        return self.get_paginated_response({"status": "success", "data": self.paginate_queryset(serializer.data)})
 
     def patch(self, request, id=None):
         item = CartItem.objects.get(id=id)
